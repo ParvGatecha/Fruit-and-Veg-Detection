@@ -1,35 +1,37 @@
 import React, { useState } from "react";
 import axios from "axios";
 import {
+  Container,
+  Typography,
   Box,
   Button,
-  Typography,
-  TextField,
   CircularProgress,
-  Alert,
-  Container,
   Grid,
+  Paper,
 } from "@mui/material";
 
 const App = () => {
   const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState(null);
   const [prediction, setPrediction] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  const handleFileChange = (event) => {
-    setFile(event.target.files[0]);
-    setPrediction("");
-    setError("");
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setPreview(URL.createObjectURL(selectedFile));
+    }
   };
 
-  const handlePredict = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (!file) {
-      setError("Please upload an image first.");
+      alert("Please select an image.");
       return;
     }
+
     setLoading(true);
-    setError("");
     const formData = new FormData();
     formData.append("file", file);
 
@@ -38,76 +40,103 @@ const App = () => {
         "http://localhost:5000/predict",
         formData,
         {
-          headers: { "Content-Type": "multipart/form-data" },
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         }
       );
       setPrediction(response.data.prediction);
-    } catch (err) {
-      setError("Error predicting the image. Please try again.");
+    } catch (error) {
+      console.error("Error during prediction:", error);
+      alert("Failed to get prediction.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Container maxWidth="sm" style={{ marginTop: "50px", textAlign: "center" }}>
-      <Typography variant="h4" gutterBottom>
-        Fruits & Vegetables Recognition
-      </Typography>
-      <Typography variant="body1" color="textSecondary" gutterBottom>
-        Upload an image to identify whether it’s a fruit or vegetable.
-      </Typography>
-      <Box
+    <Container maxWidth="md">
+      <Paper
+        elevation={3}
         sx={{
-          border: "1px dashed #ccc",
-          borderRadius: "8px",
           padding: "20px",
+          borderRadius: "15px",
           marginTop: "20px",
+          textAlign: "center",
         }}
       >
-        <input
-          accept="image/*"
-          type="file"
-          onChange={handleFileChange}
-          style={{ display: "none" }}
-          id="upload-button"
-        />
-        <label htmlFor="upload-button">
-          <Button variant="outlined" component="span">
-            Choose Image
-          </Button>
-        </label>
-        <Typography variant="body2" color="textSecondary" gutterBottom>
-          {file ? file.name : "No file chosen."}
+        <Typography variant="h4" gutterBottom>
+          Fruits & Vegetables Recognition
         </Typography>
-      </Box>
-      <Grid container spacing={2} style={{ marginTop: "20px" }}>
-        <Grid item xs={12}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handlePredict}
-            fullWidth
-            disabled={loading}
+        <Typography variant="subtitle1" gutterBottom>
+          Upload an image to predict whether it's a fruit or vegetable.
+        </Typography>
+        <form onSubmit={handleSubmit} style={{ marginTop: "20px" }}>
+          <Grid
+            container
+            spacing={2}
+            alignItems="center"
+            justifyContent="center"
           >
-            {loading ? (
-              <CircularProgress size={24} style={{ color: "white" }} />
-            ) : (
-              "Predict"
+            <Grid item xs={12}>
+              <Button
+                variant="contained"
+                component="label"
+                color="primary"
+                sx={{ textTransform: "none" }}
+              >
+                Choose Image
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  hidden
+                />
+              </Button>
+            </Grid>
+            {preview && (
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom>
+                  Image Preview:
+                </Typography>
+                <Box
+                  component="img"
+                  src={preview}
+                  alt="Selected Preview"
+                  sx={{
+                    maxWidth: "100%",
+                    borderRadius: "10px",
+                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
+                    marginTop: "20px",
+                  }}
+                />
+              </Grid>
             )}
-          </Button>
-        </Grid>
-      </Grid>
-      {error && (
-        <Alert severity="error" style={{ marginTop: "20px" }}>
-          {error}
-        </Alert>
-      )}
-      {prediction && (
-        <Alert severity="success" style={{ marginTop: "20px" }}>
-          Prediction: <strong>{prediction}</strong>
-        </Alert>
-      )}
+            <Grid item xs={12}>
+              <Button
+                type="submit"
+                variant="contained"
+                color="success"
+                sx={{
+                  marginTop: "10px",
+                  textTransform: "none",
+                  fontWeight: "bold",
+                }}
+                disabled={loading}
+              >
+                {loading ? <CircularProgress size={24} /> : "Predict"}
+              </Button>
+            </Grid>
+          </Grid>
+        </form>
+        {prediction && (
+          <Box mt={4}>
+            <Typography variant="h5" sx={{ color: "success.main" }}>
+              Prediction: {prediction}
+            </Typography>
+          </Box>
+        )}
+      </Paper>
     </Container>
   );
 };
