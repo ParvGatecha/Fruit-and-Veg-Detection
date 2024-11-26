@@ -37,7 +37,7 @@ const App = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/predict",
+        "https://fruit-and-veg-detection-1.onrender.com/predict",
         formData,
         {
           headers: {
@@ -45,6 +45,8 @@ const App = () => {
           },
         }
       );
+
+      console.log("Prediction response:", response);
       setPrediction(response.data.prediction);
     } catch (error) {
       console.error("Error during prediction:", error);
